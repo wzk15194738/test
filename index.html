@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>和风极速气象站 14.0</title>
+    <title>和风极速气象站 15.0</title>
     <style>
         /* ============================================================
            【🎨 UI 调节手册】
@@ -11,12 +11,12 @@
         :root {
             --title-size: 2.2rem;      /* 城市标题大小 */
             --label-size: 0.75rem;     /* 标签说明大小 */
-            --val-size: 1.2rem;        /* 数据数值大小 */
+            --val-size: 1.15rem;       /* 数据数值大小 */
             --avg-num-size: 2.1rem;    /* 平均温度大数字 */
             
             --card-gap: 16px;          /* 选项框间距 */
-            --inner-line-space: 14px;  /* 框内行间距 */
-            --ios-radius: 26px;        /* 圆角 */
+            --inner-line-space: 14px;  /* 框内行间距 (通过 .spacer 修改) */
+            --ios-radius: 26px;        /* 圆角大小 */
             
             --ios-blur: blur(25px);
             --card-bg: rgba(255, 255, 255, 0.12);
@@ -48,7 +48,7 @@
             border: 0.5px solid rgba(255, 255, 255, 0.15);
         }
 
-        /* 3:1:2 布局 */
+        /* 3:1:2 布局控制 */
         .temp-layout { display: flex; gap: 10px; }
         .col-3 { flex: 3; }
         .col-1 { flex: 1.3; text-align: center; border-left: 0.5px solid rgba(255,255,255,0.2); border-right: 0.5px solid rgba(255,255,255,0.2); }
@@ -74,15 +74,16 @@
 
 <div class="container">
     <div class="header">
-        <h1 id="city-name">无锡</h1> </div>
+        <h1 id="city-name">无锡</h1>
+    </div>
 
     <div class="ios-card temp-layout">
         <div class="col-3">
-            <span class="label">早间体感 (08:00)</span><span class="val" id="t-m">--</span>
+            <span class="label">早间体感 (08时)</span><span class="val" id="t-m">--</span>
             <div class="spacer"></div>
-            <span class="label">午间体感 (14:00)</span><span class="val" id="t-n">--</span>
+            <span class="label">午间体感 (14时)</span><span class="val" id="t-n">--</span>
             <div class="spacer"></div>
-            <span class="label">晚间体感 (20:00)</span><span class="val" id="t-e">--</span>
+            <span class="label">晚间体感 (20时)</span><span class="val" id="t-e">--</span>
         </div>
         <div class="col-1">
             <span class="label">全天平均</span>
@@ -98,7 +99,7 @@
     <div class="ios-card">
         <span class="label" style="margin-bottom:15px;">风力观测 (m/s)</span>
         <div class="grid-2x2">
-            <div><span class="label">当前风速风向</span><span id="w-now" class="val">--</span></div>
+            <div><span class="label">当前风向速</span><span id="w-now" class="val">--</span></div>
             <div><span class="label">全天平均</span><span id="w-all" class="val">--</span></div>
             <div><span class="label">白天平均</span><span id="w-day" class="val">--</span></div>
             <div><span class="label">夜间平均</span><span id="w-night" class="val">--</span></div>
@@ -110,68 +111,78 @@
         <div><span class="label">紫外线指数</span><span id="uv" class="val">--</span></div>
     </div>
 
-    <button id="syncBtn">同步和风天气数据</button>
+    <button id="syncBtn">同步和风气象数据</button>
 </div>
 
 <script>
     const $ = (id) => document.getElementById(id);
+    
+    // 配置信息
     const KEY = 'f52fe6e8f83244799a0aa266642dc83d';
-    const LOCATION = '101190201'; // 无锡的 LocationID，可以在和风官网查其他城市
+    const LOCATION = '101190201'; // 无锡ID
 
-    // 处理背景色
-    function updateBg(code) {
-        const c = parseInt(code);
-        if (c === 100 || c === 150) { // 晴
+    // 背景色切换逻辑
+    function updateBg(iconCode) {
+        const code = parseInt(iconCode);
+        if (code <= 150) { // 晴
             document.body.style.background = "linear-gradient(180deg, #4facfe 0%, #00f2fe 100%)";
-        } else if (c >= 300 && c < 400) { // 雨
-            document.body.style.background = "linear-gradient(180deg, #2c3e50 0%, #000 100%)";
-        } else { // 阴云
+        } else if (code >= 300 && code < 400) { // 雨
+            document.body.style.background = "linear-gradient(180deg, #2c3e50 0%, #4b6cb7 100%)";
+        } else { // 阴、多云
             document.body.style.background = "linear-gradient(180deg, #606c88 0%, #3f4c6b 100%)";
         }
     }
 
     $('syncBtn').onclick = async () => {
-        $('syncBtn').innerText = "⚡ 正在连接和风云端...";
+        $('syncBtn').innerText = "🔄 正在同步...";
         
         try {
-            // 1. 获取实时天气
-            const resNow = await fetch(`https://devapi.qweather.com/v7/weather/now?location=${LOCATION}&key=${KEY}`);
-            const dataNow = await resNow.json();
-            
-            // 2. 获取逐小时预报 (用于计算平均值和早中晚)
-            const resHour = await fetch(`https://devapi.qweather.com/v7/weather/24h?location=${LOCATION}&key=${KEY}`);
-            const dataHour = await resHour.json();
+            // 同时发出三个请求：实时天气、24h预报、生活指数(含UV)
+            const [resNow, resHour, resIndex] = await Promise.all([
+                fetch(`https://devapi.qweather.com/v7/weather/now?location=${LOCATION}&key=${KEY}`),
+                fetch(`https://devapi.qweather.com/v7/weather/24h?location=${LOCATION}&key=${KEY}`),
+                fetch(`https://devapi.qweather.com/v7/indices/1d?type=1&location=${LOCATION}&key=${KEY}`)
+            ]);
 
-            if (dataNow.code === '200' && dataHour.code === '200') {
-                const now = dataNow.now;
-                const hours = dataHour.hourly;
+            const nowData = await resNow.json();
+            const hourData = await resHour.json();
+            const indexData = await resIndex.json();
 
-                // 更新实时背景
+            if (nowData.code === '200' && hourData.code === '200') {
+                const now = nowData.now;
+                const hours = hourData.hourly;
+
+                // 1. 更新背景和基本信息
                 updateBg(now.icon);
-
-                // 实时数据填充
                 $('hum').innerText = now.humidity + "%";
                 $('w-now').innerText = (now.windSpeed / 3.6).toFixed(1) + " " + now.windDir;
-                // 和风实时接口不直接给UV，通常从生活指数获取，此处暂用 hourly 第一档近似
-                $('uv').innerText = "加载中"; 
+                
+                // 2. 获取UV指数 (生活指数接口 type=1 是紫外线)
+                if(indexData.code === '200') {
+                    $('uv').innerText = indexData.daily[0].category + " (" + indexData.daily[0].value + ")";
+                }
 
-                // 早中晚逻辑 (从 24 小时预报中提取)
-                // 假设 08:00 是早，14:00 是中，20:00 是晚
-                $('t-m').innerText = hours[8].feelsLike + "°";
-                $('t-n').innerText = hours[14].feelsLike + "°";
-                $('t-e').innerText = hours[20].feelsLike + "°";
+                // 3. 计算体感温度 (取预报数组中对应的时间点)
+                // hours[0]是当前小时，后面按顺序排。我们寻找接近早8、午14、晚20的点
+                const getByHour = (h) => {
+                    const target = hours.find(item => item.fxTime.includes(`T${h < 10 ? '0'+h : h}:`));
+                    return target ? target.feelsLike : hours[0].feelsLike;
+                };
+                $('t-m').innerText = getByHour(8) + "°";
+                $('t-n').innerText = getByHour(14) + "°";
+                $('t-e').innerText = getByHour(20) + "°";
 
-                // 平均值计算
-                const allTemps = hours.map(h => parseInt(h.feelsLike));
-                const dayTemps = hours.slice(6, 18).map(h => parseInt(h.feelsLike));
-                const nightTemps = hours.slice(0, 6).concat(hours.slice(18, 24)).map(h => parseInt(h.feelsLike));
+                // 4. 计算平均值
+                const avg = (arr) => (arr.reduce((a, b) => a + parseInt(b), 0) / arr.length).toFixed(1);
+                const allT = hours.map(h => h.feelsLike);
+                const dayT = hours.slice(6, 18).map(h => h.feelsLike);
+                const nightT = hours.slice(0, 6).concat(hours.slice(18, 24)).map(h => h.feelsLike);
 
-                const avg = (arr) => (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1);
-                $('t-avg').innerText = avg(allTemps) + "°";
-                $('t-d').innerText = avg(dayTemps) + "°";
-                $('t-nt').innerText = avg(nightTemps) + "°";
+                $('t-avg').innerText = avg(allT) + "°";
+                $('t-d').innerText = avg(dayT) + "°";
+                $('t-nt').innerText = avg(nightT) + "°";
 
-                // 风力平均值 (km/h 转 m/s)
+                // 5. 风速平均值转换
                 const avgW = (arr) => (arr.reduce((a, b) => a + parseInt(b.windSpeed), 0) / arr.length / 3.6).toFixed(1);
                 $('w-all').innerText = avgW(hours) + " m/s";
                 $('w-day').innerText = avgW(hours.slice(6, 18)) + " m/s";
@@ -179,14 +190,14 @@
 
                 $('syncBtn').innerText = "✅ 同步成功";
             } else {
-                throw new Error("API 返回错误");
+                $('syncBtn').innerText = "❌ API错误: " + nowData.code;
             }
         } catch (e) {
-            $('syncBtn').innerText = "❌ 访问受限或 Key 错误";
+            $('syncBtn').innerText = "❌ 访问受限 (请检查Key)";
             console.error(e);
         }
-        
-        setTimeout(() => { $('syncBtn').innerText = "同步和风天气数据"; }, 2000);
+
+        setTimeout(() => { $('syncBtn').innerText = "同步和风气象数据"; }, 2000);
     };
 </script>
 </body>

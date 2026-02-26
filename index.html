@@ -41,37 +41,55 @@
         </div>
     </div>
 
-    <script>
-        $('getWeather').onclick = () => {
-    const display = $('weatherDisplay');
-    display.innerText = "🛰️ 正在从气象站抓取数据...";
-    
-    // 我们改用一个更直接的 API 格式：wttr.in/China?format=j1
-    // 这样不需要申请用户的经纬度权限，成功率提升 90%
-    fetch('https://wttr.in/Beijing?format=j1') 
-        .then(res => {
-            if (!res.ok) throw new Error('服务器忙');
-            return res.json();
-        })
-        .then(data => {
-            const current = data.current_condition[0];
-            const temp = current.temp_C;
-            const desc = current.lang_zh ? current.lang_zh[0].value : current.weatherDesc[0].value;
-            
-            display.innerHTML = `
-                <b>北京</b> (示例) <br>
-                🌡️ 气温: ${temp}°C <br>
-                ☁️ 状态: ${desc}
-            `;
-            console.log("数据抓取成功！");
-        })
-        .catch(err => {
-            console.error(err);
-            // 如果 API 挂了，显示备用方案
-            display.innerHTML = "❌ 接口超时，请尝试：<br><a href='https://wttr.in' target='_blank'>点击这里直接看网页版天气</a>";
-        });
-};
-    </script>
+   <script>
+    // 💡 必须加上这一行定义，否则浏览器不知道 $ 是什么！
+    const $ = (id) => document.getElementById(id);
+
+    // 1. 变色功能 (补上刚才丢掉的逻辑)
+    $('colorBtn').onclick = () => {
+        $('mainTitle').style.color = `hsl(${Math.random()*360}, 70%, 50%)`;
+    };
+
+    // 2. 欢迎语
+    $('nameInput').oninput = (e) => {
+        $('greetText').innerText = e.target.value ? `你好，${e.target.value}！` : "你好！";
+    };
+
+    // 3. 主题切换
+    $('themeBtn').onclick = () => document.body.classList.toggle('dark');
+
+    // 4. 计数器
+    let num = 0;
+    $('plus').onclick = () => $('count').innerText = ++num;
+    $('minus').onclick = () => $('count').innerText = --num;
+
+    // 5. 天气抓取逻辑
+    $('getWeather').onclick = () => {
+        const display = $('weatherDisplay');
+        display.innerText = "🛰️ 正在从气象站抓取数据...";
+        
+        fetch('https://wttr.in/Beijing?format=j1') 
+            .then(res => {
+                if (!res.ok) throw new Error('服务器忙');
+                return res.json();
+            })
+            .then(data => {
+                const current = data.current_condition[0];
+                const temp = current.temp_C;
+                const desc = current.lang_zh ? current.lang_zh[0].value : current.weatherDesc[0].value;
+                
+                display.innerHTML = `
+                    <b>北京</b> (示例) <br>
+                    🌡️ 气温: ${temp}°C <br>
+                    ☁️ 状态: ${desc}
+                `;
+            })
+            .catch(err => {
+                display.innerHTML = "❌ 接口超时，请尝试：<br><a href='https://wttr.in' target='_blank'>点击这里直接看网页版天气</a>";
+            });
+    };
+</script>
 </body>
 
 </html>
+

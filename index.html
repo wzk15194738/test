@@ -3,136 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>专业气象仪表盘 4.0</title>
+    <title>气象实验室 5.0 - 专业观测版</title>
     <style>
-        :root {
-            --primary: #00d2ff;
-            --glass: rgba(255, 255, 255, 0.2);
-        }
+        :root { --primary: #00d2ff; --glass: rgba(255, 255, 255, 0.15); }
         body { 
-            margin: 0; 
-            min-height: 100vh;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); 
-            color: white;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            display: flex; justify-content: center; align-items: center;
+            margin: 0; min-height: 100vh;
+            background: linear-gradient(160deg, #0f2027 0%, #203a43 50%, #2c5364 100%); 
+            color: white; font-family: system-ui, -apple-system, sans-serif;
+            display: flex; justify-content: center; align-items: center; padding: 20px;
         }
         .container {
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 20px;
-            padding: 30px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            background: var(--glass); backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 24px;
+            padding: 25px; width: 100%; max-width: 600px; box-shadow: 0 10px 40px rgba(0,0,0,0.4);
         }
-        h2 { text-align: center; margin-bottom: 25px; letter-spacing: 2px; }
-        .data-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-        .item {
-            background: rgba(0,0,0,0.2);
-            padding: 12px;
-            border-radius: 10px;
-            border-left: 3px solid var(--primary);
-        }
-        .label { font-size: 0.8rem; color: #ccc; display: block; }
-        .val { font-size: 1.1rem; font-weight: bold; margin-top: 5px; display: block; }
+        h2 { text-align: center; margin: 0 0 20px 0; font-weight: 300; letter-spacing: 1px; }
+        .section-title { font-size: 0.8rem; color: var(--primary); margin: 15px 0 8px 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .item { background: rgba(0,0,0,0.25); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .label { font-size: 0.75rem; color: #aaa; display: block; }
+        .val { font-size: 1rem; font-weight: 500; margin-top: 4px; display: block; color: #fff; }
+        .advice-box { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; margin-top: 15px; line-height: 1.6; font-size: 0.9rem; }
         button {
-            width: 100%;
-            background: var(--primary);
-            border: none;
-            padding: 12px;
-            border-radius: 10px;
-            color: white;
-            font-weight: bold;
-            margin-top: 20px;
-            cursor: pointer;
-            transition: 0.3s;
+            width: 100%; background: linear-gradient(to right, #00d2ff, #3a7bd5);
+            border: none; padding: 14px; border-radius: 12px; color: white;
+            font-weight: bold; margin-top: 20px; cursor: pointer; transition: 0.3s;
         }
-        button:hover { filter: brightness(1.2); }
-        #status { text-align: center; font-size: 0.8rem; margin-top: 10px; color: #add8e6; }
+        button:active { transform: scale(0.98); }
+        .highlight { color: #f1c40f; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 id="cityName">实时气象观测站</h2>
+    <h2 id="cityName">点击下方按钮同步气象</h2>
     
-    <div class="data-grid" id="weatherBox" style="display: none;">
-        <div class="item"><span class="label">体感温度</span><span class="val" id="feelsLike">--</span></div>
-        <div class="item"><span class="label">空气湿度</span><span class="val" id="humidity">--</span></div>
-        <div class="item"><span class="label">海拔高度</span><span class="val" id="alt">--</span></div>
-        <div class="item"><span class="label">日照强度(UV)</span><span class="val" id="uv">--</span></div>
-        <div class="item"><span class="label">实时风速/风向</span><span class="val" id="wind">--</span></div>
-        <div class="item"><span class="label">全天平均风速</span><span class="val" id="avgWind">--</span></div>
-        <div class="item" style="grid-column: span 2;"><span class="label">日照时间 (Sunrise/Set)</span><span class="val" id="sunTime">--</span></div>
-        <div class="item" style="grid-column: span 2;"><span class="label">穿衣与出行建议</span><span class="val" id="advice">--</span></div>
+    <div id="weatherContent" style="display:none;">
+        <div class="section-title">🕒 多时段体感温度</div>
+        <div class="data-grid">
+            <div class="item"><span class="label">早晨 (06-09)</span><span class="val" id="tempMorning">--</span></div>
+            <div class="item"><span class="label">中午 (12-15)</span><span class="val" id="tempNoon">--</span></div>
+            <div class="item"><span class="label">晚上 (18-21)</span><span class="val" id="tempEvening">--</span></div>
+            <div class="item"><span class="label">白天平均</span><span class="val" id="tempDayAvg">--</span></div>
+            <div class="item" style="grid-column: span 2;"><span class="label">日落后 (Night)</span><span class="val" id="tempAfterDark">--</span></div>
+        </div>
+
+        <div class="section-title">💧 湿度与光照</div>
+        <div class="data-grid">
+            <div class="item"><span class="label">空气湿度 (最佳 45-65%)</span><span class="val" id="humidity">--</span></div>
+            <div class="item"><span class="label">日照强度 (0-11+ 指数)</span><span class="val" id="uv">--</span></div>
+        </div>
+
+        <div class="section-title">🌬️ 风力观测 (单位: m/s)</div>
+        <div class="data-grid">
+            <div class="item"><span class="label">当前风速/风向</span><span class="val" id="windNow">--</span></div>
+            <div class="item"><span class="label">全天平均风速</span><span class="val" id="windAllAvg">--</span></div>
+            <div class="item"><span class="label">白天平均 (速/向)</span><span class="val" id="windDay">--</span></div>
+            <div class="item"><span class="label">夜间平均 (速/向)</span><span class="val" id="windNight">--</span></div>
+        </div>
+
+        <div class="section-title">☀️ 日照与建议</div>
+        <div class="item"><span class="label">日照时间 (日出/日落)</span><span class="val" id="sunTime">--</span></div>
+        <div class="advice-box" id="adviceText"></div>
     </div>
 
-    <button id="updateBtn">获取当前位置精准气象</button>
-    <div id="status">点击按钮开始探测</div>
+    <button id="updateBtn">同步实时气象数据</button>
 </div>
 
 <script>
     const $ = (id) => document.getElementById(id);
 
+    // 风向转换器
+    const windDirMap = {
+        "N": "北风", "S": "南风", "E": "东风", "W": "西风",
+        "NE": "东北风", "NW": "西北风", "SE": "东南风", "SW": "西南风",
+        "NNE": "东北偏北风", "ENE": "东北偏东风", "ESE": "东南偏东风", "SSE": "东南偏南风",
+        "SSW": "西南偏南风", "WSW": "西南偏西风", "WNW": "西北偏西风", "NNW": "西北偏北风"
+    };
+
+    // km/h 转 m/s 转换器
+    const toMS = (kmh) => (parseInt(kmh) * 0.278).toFixed(1);
+
     $('updateBtn').onclick = () => {
-        $('status').innerText = "🛰️ 正在解码卫星数据...";
+        $('updateBtn').innerText = "🛰️ 数据同步中...";
         
-        // 自动识别 IP 定位
         fetch('https://wttr.in/?format=j1')
             .then(res => res.json())
             .then(data => {
                 const cur = data.current_condition[0];
-                const area = data.nearest_area[0];
-                const astro = data.weather[0].astronomy[0];
-                const weatherDay = data.weather[0];
+                const weather = data.weather[0];
+                const hourly = weather.hourly;
+                const astro = weather.astronomy[0];
 
-                // 1. 城市与标题
-                $('cityName').innerText = `${area.areaName[0].value} · ${area.region[0].value}`;
-                
-                // 2. 填充核心数据
-                $('feelsLike').innerText = cur.FeelsLikeC + "°C";
-                $('humidity').innerText = cur.humidity + "%";
-                $('alt').innerText = area.elevation + " 米";
-                $('uv').innerText = cur.uvIndex + " (指数)";
-                
-                // 3. 风力 (实时与方向)
-                $('wind').innerText = `${cur.windspeedKmph} km/h (${cur.winddir16Point})`;
-                
-                // 4. 平均风速 (计算全天 8 个时段的平均值)
-                const hourly = weatherDay.hourly;
-                const avg = (hourly.reduce((acc, h) => acc + parseInt(h.windspeedKmph), 0) / hourly.length).toFixed(1);
-                $('avgWind').innerText = avg + " km/h";
+                // 1. 设置标题
+                $('cityName').innerText = `📍 ${data.nearest_area[0].areaName[0].value}`;
 
-                // 5. 日照时间
+                // 2. 体感温度逻辑 (根据小时数据提取)
+                // 早(09:00), 中(12:00), 晚(21:00)
+                $('tempMorning').innerText = hourly[3].FeelsLikeC + "°C";
+                $('tempNoon').innerText = hourly[4].FeelsLikeC + "°C";
+                $('tempEvening').innerText = hourly[7].FeelsLikeC + "°C";
+                
+                // 计算白天平均体感 (09:00 - 18:00)
+                const dayTemps = [hourly[3], hourly[4], hourly[5], hourly[6]];
+                const dayAvg = (dayTemps.reduce((s, x) => s + parseInt(x.FeelsLikeC), 0) / 4).toFixed(1);
+                $('tempDayAvg').innerText = dayAvg + "°C";
+                $('tempAfterDark').innerText = hourly[0].FeelsLikeC + "°C";
+
+                // 3. 湿度与UV
+                $('humidity').innerText = `${cur.humidity}% ${cur.humidity >= 45 && cur.humidity <= 65 ? '👍' : '⚠️'}`;
+                $('uv').innerText = `${cur.uvIndex} (${cur.uvIndex >= 3 ? '建议防晒' : '无需防晒'})`;
+
+                // 4. 风速逻辑 (m/s)
+                $('windNow').innerText = `${toMS(cur.windspeedKmph)} m/s (${windDirMap[cur.winddir16Point] || cur.winddir16Point})`;
+                
+                // 全天平均
+                const allWind = (hourly.reduce((s, x) => s + parseInt(x.windspeedKmph), 0) / 8);
+                $('windAllAvg').innerText = toMS(allWind) + " m/s";
+
+                // 白天(09-18) vs 夜间(21-06)
+                const dWind = hourly.slice(3, 7);
+                const nWind = [hourly[7], hourly[0], hourly[1], hourly[2]];
+                
+                $('windDay').innerText = `${toMS(dWind[0].windspeedKmph)} m/s (${windDirMap[dWind[0].winddir16Point]})`;
+                $('windNight').innerText = `${toMS(nWind[0].windspeedKmph)} m/s (${windDirMap[nWind[0].winddir16Point]})`;
+
+                // 5. 日照
                 $('sunTime').innerText = `🌅 ${astro.sunrise} / 🌇 ${astro.sunset}`;
 
-                // 6. 穿衣建议逻辑
-                let advice = "";
-                const temp = parseInt(cur.FeelsLikeC);
-                if(temp > 28) advice = "👕 天气炎热，建议短袖凉鞋，注意防晒。";
-                else if(temp > 18) advice = "🧥 气温舒适，建议长袖或薄外套。";
-                else if(temp > 10) advice = "🧥 较凉，建议风衣或毛衣。";
-                else advice = "🧣 寒冷，请穿羽绒服或厚大衣。";
-                
-                if(parseInt(cur.uvIndex) > 5) advice += " 🕶️ 紫外线强，戴好墨镜。";
-                $('advice').innerText = advice;
+                // 6. 详细穿衣建议
+                const feels = parseInt(cur.FeelsLikeC);
+                let clothes = "", pants = "", shoes = "", acc = "";
 
-                // 显示结果
-                $('weatherBox').style.display = "grid";
-                $('status').innerText = "✅ 数据已实时同步";
+                if(feels >= 28) {
+                    clothes = "短袖、冰丝T恤"; pants = "短裤、凉爽运动裤"; shoes = "凉鞋、透气板鞋"; acc = "防晒帽、墨镜";
+                } else if(feels >= 18) {
+                    clothes = "长袖衬衫、卫衣"; pants = "牛仔裤、休闲长裤"; shoes = "运动鞋、帆布鞋"; acc = "薄款防晒外套";
+                } else if(feels >= 10) {
+                    clothes = "羊毛衫、夹克外套"; pants = "厚棉裤、工装裤"; shoes = "皮鞋、加厚运动鞋"; acc = "薄围巾、口罩";
+                } else {
+                    clothes = "羽绒服、保暖内衣"; pants = "加绒长裤、保暖裤"; shoes = "加绒靴子、高帮鞋"; acc = "厚围巾、手套、暖宝宝";
+                }
+
+                $('adviceText').innerHTML = `
+                    <b>🧥 上装建议：</b> ${clothes}<br>
+                    <b>👖 下装建议：</b> ${pants}<br>
+                    <b>👟 鞋履建议：</b> ${shoes}<br>
+                    <b>🧣 配件建议：</b> ${acc}
+                `;
+
+                $('weatherContent').style.display = "block";
+                $('updateBtn').innerText = "✅ 数据同步成功";
             })
             .catch(err => {
-                $('status').innerText = "❌ 探测失败，请检查网络或关闭 VPN";
-                console.error(err);
+                $('cityName').innerText = "❌ 同步失败，请检查网络";
+                $('updateBtn').innerText = "重新尝试同步";
             });
     };
 </script>
-
 </body>
 </html>

@@ -2,163 +2,156 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>气象实验室 6.0 - 沉浸版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>气象实验室 7.0 - iOS 灵感版</title>
     <style>
-        :root { --glass: rgba(0, 0, 0, 0.3); --text: #ffffff; }
-        
-        /* 基础样式 */
-        body { 
-            margin: 0; min-height: 100vh; color: var(--text);
-            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-            display: flex; justify-content: center; align-items: center;
-            overflow-x: hidden; background: #2c3e50; /* 默认底色 */
+        /* --- iOS 设计规范变量 --- */
+        :root {
+            --ios-bg: rgba(255, 255, 255, 0.2);
+            --ios-blur: blur(25px);
+            --ios-radius: 22px;
+            --text-main: #ffffff;
+            --text-sub: rgba(255, 255, 255, 0.7);
         }
 
-        /* --- 天气动画背景容器 --- */
-        #weather-bg {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1; transition: background 2s ease;
+        body {
+            margin: 0; padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex; justify-content: center; align-items: flex-start;
+            /* 默认背景图（晴天） */
+            background: url('https://images.unsplash.com/photo-1516912481808-34061f8c6301?auto=format&fit=crop&w=1000&q=80') center/cover no-repeat fixed;
+            transition: background 0.8s ease-in-out;
         }
 
-        /* 雨点动画 */
-        .rain-drop {
-            position: absolute; background: rgba(255,255,255,0.4);
-            width: 2px; height: 15px; top: -20px;
-            animation: fall linear infinite;
+        /* 遮罩层让文字更清晰 */
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.2); z-index: -1;
         }
-        @keyframes fall { to { transform: translateY(110vh); } }
 
-        /* 容器 */
         .container {
-            background: var(--glass); backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 28px;
-            padding: 30px; width: 95%; max-width: 800px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            width: 92%; max-width: 500px; padding: 25px 0;
+            display: flex; flex-direction: column; gap: 15px;
         }
 
-        h1 { text-align: center; font-weight: 300; margin: 0 0 25px 0; }
+        .header { text-align: center; margin-bottom: 10px; }
+        .header h1 { font-size: 2rem; font-weight: 500; margin: 0; }
+        .header p { font-size: 0.9rem; color: var(--text-sub); margin: 5px 0; }
 
-        /* --- 3:1:2 布局 --- */
-        .temp-section { display: flex; gap: 15px; margin-bottom: 20px; }
-        .temp-col-left { flex: 3; }   /* 早中晚 */
-        .temp-col-mid { flex: 1; text-align: center; } /* 全天平均 */
-        .temp-col-right { flex: 2; }  /* 白天夜间 */
-
-        .card-inner { 
-            background: rgba(255,255,255,0.1); padding: 12px; 
-            border-radius: 15px; height: 100%; display: flex; flex-direction: column; justify-content: space-around;
+        /* --- iOS 卡片样式 --- */
+        .ios-card {
+            background: var(--ios-bg);
+            backdrop-filter: var(--ios-blur);
+            -webkit-backdrop-filter: var(--ios-blur);
+            border-radius: var(--ios-radius);
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .label { font-size: 0.75rem; color: rgba(255,255,255,0.6); }
-        .val { font-size: 1.1rem; font-weight: bold; }
+        /* 3:1:2 温度布局 */
+        .temp-row { display: flex; gap: 10px; align-items: stretch; }
+        .col-left { flex: 3; display: flex; flex-direction: column; gap: 8px; }
+        .col-mid { flex: 1.2; display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1); }
+        .col-right { flex: 2; display: flex; flex-direction: column; gap: 8px; padding-left: 5px; }
 
-        /* 通用网格 */
-        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .sub-card { background: rgba(255,255,255,0.08); padding: 15px; border-radius: 15px; }
+        .label { font-size: 0.75rem; color: var(--text-sub); }
+        .val { font-size: 1rem; font-weight: 600; }
+        .big-val { font-size: 1.6rem; color: #ffdb58; }
 
-        /* --- 详细穿搭建议 --- */
-        .advice-box { 
-            background: rgba(255,255,255,0.15); border-left: 4px solid #00d2ff;
-            padding: 20px; border-radius: 15px; line-height: 1.8;
-        }
-        .advice-tag { color: #00d2ff; font-weight: bold; margin-right: 8px; }
+        /* 网格布局 */
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .grid-item { display: flex; flex-direction: column; gap: 4px; }
 
+        /* 穿搭建议分行展示 */
+        .advice-list { display: flex; flex-direction: column; gap: 10px; font-size: 0.9rem; line-height: 1.4; }
+        .advice-item { padding-left: 12px; border-left: 3px solid #64d2ff; }
+        .advice-tag { font-weight: bold; color: #64d2ff; display: block; margin-bottom: 2px; }
+
+        /* 按钮 */
         button {
-            width: 100%; padding: 15px; border-radius: 15px; border: none;
-            background: #fff; color: #333; font-weight: bold; cursor: pointer;
-            transition: 0.3s; margin-top: 10px;
+            background: #ffffff; color: #000; border: none;
+            padding: 16px; border-radius: var(--ios-radius);
+            font-size: 1rem; font-weight: 600; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
         }
+        button:active { transform: scale(0.96); }
+
+        #status { text-align: center; font-size: 0.8rem; color: var(--text-sub); margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div id="weather-bg"></div>
-
 <div class="container">
-    <h1 id="cityName">气象实验室 6.0</h1>
+    <div class="header">
+        <h1 id="cityName">气象实验室</h1>
+        <p id="sunTime">等待数据同步...</p>
+    </div>
 
-    <div class="temp-section">
-        <div class="temp-col-left">
-            <div class="card-inner">
-                <div class="label">早中晚体感</div>
-                <div class="val">🌅 <span id="t-morn">--</span></div>
-                <div class="val">☀️ <span id="t-noon">--</span></div>
-                <div class="val">🌙 <span id="t-eve">--</span></div>
-            </div>
+    <div class="ios-card temp-row">
+        <div class="col-left">
+            <div class="grid-item"><span class="label">早间体感</span><span class="val" id="t-morn">--</span></div>
+            <div class="grid-item"><span class="label">午间体感</span><span class="val" id="t-noon">--</span></div>
+            <div class="grid-item"><span class="label">晚间体感</span><span class="val" id="t-eve">--</span></div>
         </div>
-        <div class="temp-col-mid">
-            <div class="card-inner">
-                <div class="label">全天平均</div>
-                <div id="t-all-avg" style="font-size: 1.5rem; color: #f1c40f;">--</div>
-            </div>
+        <div class="col-mid">
+            <span class="label">全天平均</span>
+            <span class="big-val" id="t-all-avg">--</span>
         </div>
-        <div class="temp-col-right">
-            <div class="card-inner">
-                <div class="label">白/夜平均</div>
-                <div><span class="label">昼:</span> <span id="t-day-avg" class="val">--</span></div>
-                <div><span class="label">夜:</span> <span id="t-night-avg" class="val">--</span></div>
-            </div>
+        <div class="col-right">
+            <div class="grid-item"><span class="label">白天体感</span><span class="val" id="t-day-avg">--</span></div>
+            <div class="grid-item"><span class="label">夜间体感</span><span class="val" id="t-night-avg">--</span></div>
         </div>
     </div>
 
-    <div class="data-grid">
-        <div class="sub-card">
-            <span class="label">空气湿度 (最佳 45-65%)</span>
-            <span id="hum-val" class="val">--</span>
+    <div class="ios-card data-grid">
+        <div class="grid-item">
+            <span class="label">湿度 (最佳 45-65%)</span>
+            <span class="val" id="hum-val">--</span>
         </div>
-        <div class="sub-card">
+        <div class="grid-item">
             <span class="label">日照强度 (0-11+)</span>
-            <span id="uv-val" class="val">--</span>
+            <span class="val" id="uv-val">--</span>
         </div>
     </div>
 
-    <div class="data-grid">
-        <div class="sub-card">
-            <span class="label">实时风速/风向 (m/s)</span>
-            <span id="wind-now" class="val">--</span>
-        </div>
-        <div class="sub-card">
-            <span class="label">日照 (出/落)</span>
-            <span id="sun-time" class="val">--</span>
+    <div class="ios-card">
+        <div class="label" style="margin-bottom:12px;">风力观测 (单位: m/s)</div>
+        <div class="data-grid">
+            <div class="grid-item"><span class="label">当前风速风向</span><span class="val" id="wind-now">--</span></div>
+            <div class="grid-item"><span class="label">全天平均速/向</span><span class="val" id="wind-all">--</span></div>
+            <div class="grid-item"><span class="label">白天平均速/向</span><span class="val" id="wind-day">--</span></div>
+            <div class="grid-item"><span class="label">夜间平均速/向</span><span class="val" id="wind-night">--</span></div>
         </div>
     </div>
 
-    <div class="advice-box" id="advice-content">点击同步数据后生成建议...</div>
+    <div class="ios-card advice-list" id="advice-content">
+        点击下方按钮，获取今日专业穿搭建议。
+    </div>
 
-    <button id="syncBtn">同步实时气象与动画</button>
+    <button id="syncBtn">同步实时气象数据</button>
+    <div id="status">数据来源: 全球气象观测站</div>
 </div>
 
 <script>
     const $ = (id) => document.getElementById(id);
 
     const cityMap = { "Wuxi": "无锡", "Shanghai": "上海", "Beijing": "北京", "Suzhou": "苏州", "Nanjing": "南京", "Hangzhou": "杭州" };
-    const windMap = { "N": "北风", "S": "南风", "E": "东风", "W": "西风", "NE": "东北风", "NW": "西北风", "SE": "东南风", "SW": "西南风" };
+    const windMap = { "N": "北风", "S": "南风", "E": "东风", "W": "西风", "NE": "东北风", "NW": "西北风", "SE": "东南风", "SW": "西南风", "NNE": "东北偏北", "ENE": "东北偏东", "ESE": "东南偏东", "SSE": "东南偏南", "SSW": "西南偏南", "WSW": "西南偏西", "WNW": "西北偏西", "NNW": "西北偏北" };
 
-    // --- 背景动画控制 ---
-    function setWeatherEffect(desc, windSpeed, rain) {
-        const bg = $('weather-bg');
-        bg.innerHTML = ''; // 清空旧动画
-        
-        if (desc.includes("雨")) {
-            bg.style.background = "#1a1a2e";
-            const density = rain > 5 ? 150 : 60; // 根据雨量决定雨滴数
-            for(let i=0; i<density; i++) {
-                let drop = document.createElement('div');
-                drop.className = 'rain-drop';
-                drop.style.left = Math.random() * 100 + 'vw';
-                drop.style.animationDuration = (Math.random() * 0.5 + 0.5) + 's';
-                drop.style.animationDelay = Math.random() * 2 + 's';
-                bg.appendChild(drop);
-            }
-        } else if (desc.includes("晴")) {
-            bg.style.background = "linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%)";
-        } else {
-            bg.style.background = "#4a69bd"; // 阴天/多云
-        }
+    const toMS = (kmh) => (parseInt(kmh) * 0.278).toFixed(1);
+
+    function updateBackground(desc) {
+        let bgUrl = 'https://images.unsplash.com/photo-1516912481808-34061f8c6301?auto=format&fit=crop&w=1000&q=80'; // 默认晴天
+        if (desc.includes("雨")) bgUrl = 'https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?auto=format&fit=crop&w=1000&q=80';
+        else if (desc.includes("云") || desc.includes("阴")) bgUrl = 'https://images.unsplash.com/photo-1534088568595-a066f7105a21?auto=format&fit=crop&w=1000&q=80';
+        document.body.style.background = `url('${bgUrl}') center/cover no-repeat fixed`;
     }
 
     $('syncBtn').onclick = () => {
+        $('syncBtn').innerText = "同步中...";
         fetch('https://wttr.in/?format=j1')
             .then(res => res.json())
             .then(data => {
@@ -167,62 +160,49 @@
                 const hourly = weather.hourly;
                 const area = data.nearest_area[0].areaName[0].value;
 
-                // 城市名汉化
-                $('cityName').innerText = (cityMap[area] || area) + " 气象站";
+                // 城市与背景
+                $('cityName').innerText = cityMap[area] || area;
+                $('sunTime').innerText = `🌅 ${weather.astronomy[0].sunrise}  🌇 ${weather.astronomy[0].sunset}`;
+                updateBackground(cur.lang_zh ? cur.lang_zh[0].value : cur.weatherDesc[0].value);
 
-                // 温度填充
-                $('t-morn').innerText = hourly[3].FeelsLikeC + "°C";
-                $('t-noon').innerText = hourly[4].FeelsLikeC + "°C";
-                $('t-eve').innerText = hourly[7].FeelsLikeC + "°C";
-                
-                const allAvg = (hourly.reduce((s, x) => s + parseInt(x.FeelsLikeC), 0) / 8).toFixed(1);
-                $('t-all-avg').innerText = allAvg + "°C";
-                
-                const dAvg = (hourly.slice(3, 7).reduce((s, x) => s + parseInt(x.FeelsLikeC), 0) / 4).toFixed(1);
-                const nAvg = (hourly.slice(0, 3).concat(hourly[7]).reduce((s, x) => s + parseInt(x.FeelsLikeC), 0) / 4).toFixed(1);
-                $('t-day-avg').innerText = dAvg + "°C";
-                $('t-night-avg').innerText = nAvg + "°C";
+                // 温度
+                $('t-morn').innerText = hourly[3].FeelsLikeC + "°";
+                $('t-noon').innerText = hourly[4].FeelsLikeC + "°";
+                $('t-eve').innerText = hourly[7].FeelsLikeC + "°";
+                $('t-all-avg').innerText = (hourly.reduce((s, x) => s + parseInt(x.FeelsLikeC), 0) / 8).toFixed(1) + "°";
+                $('t-day-avg').innerText = (hourly.slice(3, 7).reduce((s, x) => s + parseInt(x.FeelsLikeC), 0) / 4).toFixed(1) + "°";
+                $('t-night-avg').innerText = (hourly.slice(0, 3).concat(hourly[7]).reduce((s, x) => s + parseInt(x.FeelsLikeC), 0) / 4).toFixed(1) + "°";
 
-                // 湿度/UV/风速
-                $('hum-val').innerText = `${cur.humidity}%`;
-                $('uv-val').innerText = `${cur.uvIndex} (建议${cur.uvIndex > 3 ? '涂抹防晒' : '自然出行'})`;
-                $('wind-now').innerText = `${(cur.windspeedKmph * 0.278).toFixed(1)} m/s (${windMap[cur.winddir16Point] || cur.winddir16Point})`;
-                $('sun-time').innerText = `${weather.astronomy[0].sunrise} / ${weather.astronomy[0].sunset}`;
+                // 湿度/UV
+                $('hum-val').innerText = `${cur.humidity}% (${cur.humidity >= 45 && cur.humidity <= 65 ? '最佳' : '失衡'})`;
+                $('uv-val').innerText = `${cur.uvIndex} (${cur.uvIndex > 3 ? '建议防晒' : '安全'})`;
 
-                // --- 三层穿衣建议 ---
-                const feels = parseInt(cur.FeelsLikeC);
-                let colorAdvice = feels > 20 ? "浅色系（白、米、浅蓝）更清爽" : "深色系（焦糖、深灰、藏蓝）更吸热保暖";
-                let layers = "";
+                // 风力观测补全
+                const getWindStr = (h) => `${toMS(h.windspeedKmph)} ${windMap[h.winddir16Point] || h.winddir16Point}`;
+                $('wind-now').innerText = getWindStr(cur);
+                $('wind-all').innerText = getWindStr(hourly[4]); // 取午间代表全天趋势
+                $('wind-day').innerText = getWindStr(hourly[4]);
+                $('wind-night').innerText = getWindStr(hourly[7]);
 
-                if(feels >= 25) {
-                    layers = `
-                        <div><span class="advice-tag">排汗层:</span> 纯棉或速干短袖，保持干爽</div>
-                        <div><span class="advice-tag">下装:</span> 亚麻凉爽长裤或运动短裤</div>
-                        <div><span class="advice-tag">鞋履:</span> 透气网面运动鞋</div>
-                    `;
-                } else if(feels >= 15) {
-                    layers = `
-                        <div><span class="advice-tag">内层:</span> 长袖棉质T恤</div>
-                        <div><span class="advice-tag">保暖层:</span> 薄针织衫或衬衫</div>
-                        <div><span class="advice-tag">外层:</span> 防风夹克或牛仔外套</div>
-                    `;
-                } else {
-                    layers = `
-                        <div><span class="advice-tag">内层:</span> 德绒或真丝保暖内衣</div>
-                        <div><span class="advice-tag">保暖层:</span> 羊绒衫或加绒卫衣</div>
-                        <div><span class="advice-tag">防风层:</span> 充绒量150g+羽绒服或羊毛大衣</div>
-                    `;
-                }
+                // 穿搭建议
+                const f = parseInt(cur.FeelsLikeC);
+                let col = f > 22 ? "浅色系(白/米/浅蓝)" : "深色系(咖/黑/藏蓝)";
+                let l1, l2, l3;
+                if(f >= 25) { l1="凉爽短袖/真丝衫"; l2="薄防晒衫(室内)"; l3="单层风衣(备用)"; }
+                else if(f >= 15) { l1="长袖棉质打底"; l2="羊毛背心/薄卫衣"; l3="休闲西装/工装外套"; }
+                else { l1="德绒发热内衣"; l2="加绒毛衣/厚帽衫"; l3="长款羽绒服/羊绒大衣"; }
 
                 $('advice-content').innerHTML = `
-                    <div style="margin-bottom:10px;"><b>🎨 颜色建议：</b>${colorAdvice}</div>
-                    ${layers}
-                    <div style="margin-top:10px; font-size:0.8rem; opacity:0.8;">* 依据三层穿衣法：内排汗、中保暖、外防风</div>
+                    <div class="advice-item"><span class="advice-tag">🎨 配色建议</span>${col}，视觉更和谐。</div>
+                    <div class="advice-item"><span class="advice-tag">👕 排汗层 (贴身)</span>${l1}，保持皮肤干爽。</div>
+                    <div class="advice-item"><span class="advice-tag">🧶 保暖层 (中间)</span>${l2}，有效锁住热量。</div>
+                    <div class="advice-item"><span class="advice-tag">🛡️ 防风层 (外套)</span>${l3}，阻挡外部寒气。</div>
+                    <div class="advice-item"><span class="advice-tag">👟 鞋履配件</span>${f > 20 ? '透气运动鞋 + 遮阳帽' : '加绒皮鞋 + 保暖围巾'}。</div>
                 `;
 
-                // 启动背景动画
-                setWeatherEffect(cur.lang_zh ? cur.lang_zh[0].value : cur.weatherDesc[0].value, cur.windspeedKmph, 0);
-            });
+                $('syncBtn').innerText = "数据同步成功";
+            })
+            .catch(() => { $('syncBtn').innerText = "同步失败，请检查网络"; });
     };
 </script>
 </body>

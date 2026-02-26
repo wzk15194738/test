@@ -3,94 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的全能实验室 3.0</title>
+    <title>专业气象仪表盘 4.0</title>
     <style>
-        /* 全局美化 */
         :root {
-            --primary: #4facfe;
-            --bg: #f5f7fa;
-            --card: rgba(255, 255, 255, 0.9);
+            --primary: #00d2ff;
+            --glass: rgba(255, 255, 255, 0.2);
         }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 20px; transition: 0.5s; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
-        .card { background: var(--card); padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; }
-        .card:hover { transform: translateY(-5px); }
-        h3 { margin-top: 0; color: var(--primary); font-size: 0.9rem; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        button { background: var(--primary); border: none; color: white; padding: 8px 15px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; }
-        #weatherDisplay { margin-top: 10px; font-size: 0.9rem; line-height: 1.4; color: #555; }
-        
-        /* 夜间模式 */
-        body.dark { background: #1a1a2e; color: white; }
-        body.dark .card { background: #16213e; color: white; border: 1px solid #0f3460; }
+        body { 
+            margin: 0; 
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); 
+            color: white;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .container {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        h2 { text-align: center; margin-bottom: 25px; letter-spacing: 2px; }
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .item {
+            background: rgba(0,0,0,0.2);
+            padding: 12px;
+            border-radius: 10px;
+            border-left: 3px solid var(--primary);
+        }
+        .label { font-size: 0.8rem; color: #ccc; display: block; }
+        .val { font-size: 1.1rem; font-weight: bold; margin-top: 5px; display: block; }
+        button {
+            width: 100%;
+            background: var(--primary);
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover { filter: brightness(1.2); }
+        #status { text-align: center; font-size: 0.8rem; margin-top: 10px; color: #add8e6; }
     </style>
 </head>
 <body>
 
-    <h1 id="mainTitle" style="text-align:center;">我的交互实验室 🧪</h1>
-
-    <div class="grid">
-        <div class="card"><h3>1. 随机变色</h3><button id="colorBtn">变换标题颜色</button></div>
-        <div class="card"><h3>2. 欢迎语</h3><input type="text" id="nameInput" placeholder="输入名字..." style="width:90%"><p id="greetText">你好！</p></div>
-        <div class="card"><h3>3. 主题切换</h3><button id="themeBtn">深色/浅色模式</button></div>
-        <div class="card"><h3>4. 计数器</h3><div style="text-align:center;"><button id="minus" style="width:30%">-</button> <span id="count">0</span> <button id="plus" style="width:30%">+</button></div></div>
-        
-        <div class="card">
-            <h3>5. 实时天气 (Fetch API)</h3>
-            <p id="weatherDisplay">等待查询...</p>
-            <button id="getWeather">点击抓取真实天气数据</button>
-        </div>
+<div class="container">
+    <h2 id="cityName">实时气象观测站</h2>
+    
+    <div class="data-grid" id="weatherBox" style="display: none;">
+        <div class="item"><span class="label">体感温度</span><span class="val" id="feelsLike">--</span></div>
+        <div class="item"><span class="label">空气湿度</span><span class="val" id="humidity">--</span></div>
+        <div class="item"><span class="label">海拔高度</span><span class="val" id="alt">--</span></div>
+        <div class="item"><span class="label">日照强度(UV)</span><span class="val" id="uv">--</span></div>
+        <div class="item"><span class="label">实时风速/风向</span><span class="val" id="wind">--</span></div>
+        <div class="item"><span class="label">全天平均风速</span><span class="val" id="avgWind">--</span></div>
+        <div class="item" style="grid-column: span 2;"><span class="label">日照时间 (Sunrise/Set)</span><span class="val" id="sunTime">--</span></div>
+        <div class="item" style="grid-column: span 2;"><span class="label">穿衣与出行建议</span><span class="val" id="advice">--</span></div>
     </div>
 
-   <script>
-    // 💡 必须加上这一行定义，否则浏览器不知道 $ 是什么！
+    <button id="updateBtn">获取当前位置精准气象</button>
+    <div id="status">点击按钮开始探测</div>
+</div>
+
+<script>
     const $ = (id) => document.getElementById(id);
 
-    // 1. 变色功能 (补上刚才丢掉的逻辑)
-    $('colorBtn').onclick = () => {
-        $('mainTitle').style.color = `hsl(${Math.random()*360}, 70%, 50%)`;
-    };
-
-    // 2. 欢迎语
-    $('nameInput').oninput = (e) => {
-        $('greetText').innerText = e.target.value ? `你好，${e.target.value}！` : "你好！";
-    };
-
-    // 3. 主题切换
-    $('themeBtn').onclick = () => document.body.classList.toggle('dark');
-
-    // 4. 计数器
-    let num = 0;
-    $('plus').onclick = () => $('count').innerText = ++num;
-    $('minus').onclick = () => $('count').innerText = --num;
-
-    // 5. 天气抓取逻辑
-    $('getWeather').onclick = () => {
-        const display = $('weatherDisplay');
-        display.innerText = "🛰️ 正在从气象站抓取数据...";
+    $('updateBtn').onclick = () => {
+        $('status').innerText = "🛰️ 正在解码卫星数据...";
         
-        fetch('https://wttr.in/Beijing?format=j1') 
-            .then(res => {
-                if (!res.ok) throw new Error('服务器忙');
-                return res.json();
-            })
+        // 自动识别 IP 定位
+        fetch('https://wttr.in/?format=j1')
+            .then(res => res.json())
             .then(data => {
-                const current = data.current_condition[0];
-                const temp = current.temp_C;
-                const desc = current.lang_zh ? current.lang_zh[0].value : current.weatherDesc[0].value;
+                const cur = data.current_condition[0];
+                const area = data.nearest_area[0];
+                const astro = data.weather[0].astronomy[0];
+                const weatherDay = data.weather[0];
+
+                // 1. 城市与标题
+                $('cityName').innerText = `${area.areaName[0].value} · ${area.region[0].value}`;
                 
-                display.innerHTML = `
-                    <b>北京</b> (示例) <br>
-                    🌡️ 气温: ${temp}°C <br>
-                    ☁️ 状态: ${desc}
-                `;
+                // 2. 填充核心数据
+                $('feelsLike').innerText = cur.FeelsLikeC + "°C";
+                $('humidity').innerText = cur.humidity + "%";
+                $('alt').innerText = area.elevation + " 米";
+                $('uv').innerText = cur.uvIndex + " (指数)";
+                
+                // 3. 风力 (实时与方向)
+                $('wind').innerText = `${cur.windspeedKmph} km/h (${cur.winddir16Point})`;
+                
+                // 4. 平均风速 (计算全天 8 个时段的平均值)
+                const hourly = weatherDay.hourly;
+                const avg = (hourly.reduce((acc, h) => acc + parseInt(h.windspeedKmph), 0) / hourly.length).toFixed(1);
+                $('avgWind').innerText = avg + " km/h";
+
+                // 5. 日照时间
+                $('sunTime').innerText = `🌅 ${astro.sunrise} / 🌇 ${astro.sunset}`;
+
+                // 6. 穿衣建议逻辑
+                let advice = "";
+                const temp = parseInt(cur.FeelsLikeC);
+                if(temp > 28) advice = "👕 天气炎热，建议短袖凉鞋，注意防晒。";
+                else if(temp > 18) advice = "🧥 气温舒适，建议长袖或薄外套。";
+                else if(temp > 10) advice = "🧥 较凉，建议风衣或毛衣。";
+                else advice = "🧣 寒冷，请穿羽绒服或厚大衣。";
+                
+                if(parseInt(cur.uvIndex) > 5) advice += " 🕶️ 紫外线强，戴好墨镜。";
+                $('advice').innerText = advice;
+
+                // 显示结果
+                $('weatherBox').style.display = "grid";
+                $('status').innerText = "✅ 数据已实时同步";
             })
             .catch(err => {
-                display.innerHTML = "❌ 接口超时，请尝试：<br><a href='https://wttr.in' target='_blank'>点击这里直接看网页版天气</a>";
+                $('status').innerText = "❌ 探测失败，请检查网络或关闭 VPN";
+                console.error(err);
             });
     };
 </script>
+
 </body>
-
 </html>
-
-

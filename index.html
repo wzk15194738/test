@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>极速气象站 13.0</title>
+    <title>和风极速气象站 14.0</title>
     <style>
         /* ============================================================
-           【🎨 UI 调节手册 - 调整文字大小、间距、圆角】
+           【🎨 UI 调节手册】
            ============================================================ */
         :root {
-            --title-size: 2.2rem;      /* 1. 城市标题大小 */
-            --label-size: 0.75rem;     /* 2. 标签说明大小 */
-            --val-size: 1.2rem;        /* 3. 数据数值大小 */
-            --avg-num-size: 2rem;      /* 4. 平均温度大数字大小 */
+            --title-size: 2.2rem;      /* 城市标题大小 */
+            --label-size: 0.75rem;     /* 标签说明大小 */
+            --val-size: 1.2rem;        /* 数据数值大小 */
+            --avg-num-size: 2.1rem;    /* 平均温度大数字 */
             
-            --card-gap: 16px;          /* 5. 选项框之间的上下间距 */
-            --inner-line-space: 12px;  /* 6. 选项框内的行间距 (通过 .spacer 修改) */
-            --ios-radius: 26px;        /* 7. 选项框圆角大小 */
+            --card-gap: 16px;          /* 选项框间距 */
+            --inner-line-space: 14px;  /* 框内行间距 */
+            --ios-radius: 26px;        /* 圆角 */
             
             --ios-blur: blur(25px);
             --card-bg: rgba(255, 255, 255, 0.12);
@@ -28,13 +28,12 @@
             color: #fff; min-height: 100vh;
             display: flex; justify-content: center;
             background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
-            transition: background 1.2s ease;
+            transition: background 1s ease;
         }
 
         .container {
             width: 90%; max-width: 500px; padding: 60px 0;
-            display: flex; flex-direction: column; 
-            gap: var(--card-gap);
+            display: flex; flex-direction: column; gap: var(--card-gap);
         }
 
         .header { text-align: center; margin-bottom: 20px; }
@@ -49,10 +48,10 @@
             border: 0.5px solid rgba(255, 255, 255, 0.15);
         }
 
-        /* 3:1:2 布局控制 */
+        /* 3:1:2 布局 */
         .temp-layout { display: flex; gap: 10px; }
         .col-3 { flex: 3; }
-        .col-1 { flex: 1.2; text-align: center; border-left: 0.5px solid rgba(255,255,255,0.2); border-right: 0.5px solid rgba(255,255,255,0.2); }
+        .col-1 { flex: 1.3; text-align: center; border-left: 0.5px solid rgba(255,255,255,0.2); border-right: 0.5px solid rgba(255,255,255,0.2); }
         .col-2 { flex: 2; padding-left: 10px; }
 
         .label { font-size: var(--label-size); color: rgba(255,255,255,0.6); display: block; margin-bottom: 4px; }
@@ -75,19 +74,18 @@
 
 <div class="container">
     <div class="header">
-        <h1 id="city-name">气象实验室</h1>
-    </div>
+        <h1 id="city-name">无锡</h1> </div>
 
     <div class="ios-card temp-layout">
         <div class="col-3">
-            <span class="label">早间体感</span><span class="val" id="t-m">--</span>
+            <span class="label">早间体感 (08:00)</span><span class="val" id="t-m">--</span>
             <div class="spacer"></div>
-            <span class="label">午间体感</span><span class="val" id="t-n">--</span>
+            <span class="label">午间体感 (14:00)</span><span class="val" id="t-n">--</span>
             <div class="spacer"></div>
-            <span class="label">晚间体感</span><span class="val" id="t-e">--</span>
+            <span class="label">晚间体感 (20:00)</span><span class="val" id="t-e">--</span>
         </div>
         <div class="col-1">
-            <span class="label">平均</span>
+            <span class="label">全天平均</span>
             <span class="avg-num" id="t-avg">--</span>
         </div>
         <div class="col-2">
@@ -100,7 +98,7 @@
     <div class="ios-card">
         <span class="label" style="margin-bottom:15px;">风力观测 (m/s)</span>
         <div class="grid-2x2">
-            <div><span class="label">当前风向速</span><span id="w-now" class="val">--</span></div>
+            <div><span class="label">当前风速风向</span><span id="w-now" class="val">--</span></div>
             <div><span class="label">全天平均</span><span id="w-all" class="val">--</span></div>
             <div><span class="label">白天平均</span><span id="w-day" class="val">--</span></div>
             <div><span class="label">夜间平均</span><span id="w-night" class="val">--</span></div>
@@ -108,84 +106,87 @@
     </div>
 
     <div class="ios-card grid-2x2">
-        <div><span class="label">湿度 (45-65%最佳)</span><span id="hum" class="val">--</span></div>
-        <div><span class="label">日照强度 (UV)</span><span id="uv" class="val">--</span></div>
+        <div><span class="label">当前湿度</span><span id="hum" class="val">--</span></div>
+        <div><span class="label">紫外线指数</span><span id="uv" class="val">--</span></div>
     </div>
 
-    <button id="syncBtn">点击同步气象数据</button>
+    <button id="syncBtn">同步和风天气数据</button>
 </div>
 
 <script>
     const $ = (id) => document.getElementById(id);
+    const KEY = 'f52fe6e8f83244799a0aa266642dc83d';
+    const LOCATION = '101190201'; // 无锡的 LocationID，可以在和风官网查其他城市
 
-    // 【🌬️ 风向精简化：合并 3 字母风向】
-    function simplifyWindDir(dir) {
-        if (!dir) return "";
-        const map = {
-            "N": "北风", "S": "南风", "E": "东风", "W": "西风",
-            "NE": "东北风", "NW": "西北风", "SE": "东南风", "SW": "西南风",
-            "NNE": "北风", "ENE": "东风", "ESE": "东风", "SSE": "南风",
-            "SSW": "南风", "WSW": "西风", "WNW": "西风", "NNW": "北风"
-        };
-        return map[dir] || dir;
+    // 处理背景色
+    function updateBg(code) {
+        const c = parseInt(code);
+        if (c === 100 || c === 150) { // 晴
+            document.body.style.background = "linear-gradient(180deg, #4facfe 0%, #00f2fe 100%)";
+        } else if (c >= 300 && c < 400) { // 雨
+            document.body.style.background = "linear-gradient(180deg, #2c3e50 0%, #000 100%)";
+        } else { // 阴云
+            document.body.style.background = "linear-gradient(180deg, #606c88 0%, #3f4c6b 100%)";
+        }
     }
 
-    const cityMap = { "Wuxi": "无锡", "Shanghai": "上海", "Beijing": "北京", "Suzhou": "苏州" };
-
-    $('syncBtn').onclick = () => {
-        $('syncBtn').innerText = "🔄 正在连接服务器...";
+    $('syncBtn').onclick = async () => {
+        $('syncBtn').innerText = "⚡ 正在连接和风云端...";
         
-        // 尝试请求数据（增加了超时控制）
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000); 
+        try {
+            // 1. 获取实时天气
+            const resNow = await fetch(`https://devapi.qweather.com/v7/weather/now?location=${LOCATION}&key=${KEY}`);
+            const dataNow = await resNow.json();
+            
+            // 2. 获取逐小时预报 (用于计算平均值和早中晚)
+            const resHour = await fetch(`https://devapi.qweather.com/v7/weather/24h?location=${LOCATION}&key=${KEY}`);
+            const dataHour = await resHour.json();
 
-        // 优化请求：强制使用中文并简化格式
-        fetch('https://wttr.in/?format=j1&lang=zh', { signal: controller.signal })
-            .then(res => res.json())
-            .then(data => {
-                clearTimeout(timeoutId);
-                const cur = data.current_condition[0];
-                const weather = data.weather[0];
-                const hourly = weather.hourly;
+            if (dataNow.code === '200' && dataHour.code === '200') {
+                const now = dataNow.now;
+                const hours = dataHour.hourly;
 
-                // 城市名显示
-                const rawCity = data.nearest_area[0].areaName[0].value;
-                $('city-name').innerText = cityMap[rawCity] || rawCity;
+                // 更新实时背景
+                updateBg(now.icon);
 
-                // 背景根据天气自动切换
-                const desc = cur.weatherDesc[0].value.toLowerCase();
-                if(desc.includes("sun") || desc.includes("clear")) 
-                    document.body.style.background = "linear-gradient(180deg, #4facfe 0%, #00f2fe 100%)";
-                else if(desc.includes("rain")) 
-                    document.body.style.background = "linear-gradient(180deg, #2c3e50 0%, #000 100%)";
-                else 
-                    document.body.style.background = "linear-gradient(180deg, #606c88 0%, #3f4c6b 100%)";
+                // 实时数据填充
+                $('hum').innerText = now.humidity + "%";
+                $('w-now').innerText = (now.windSpeed / 3.6).toFixed(1) + " " + now.windDir;
+                // 和风实时接口不直接给UV，通常从生活指数获取，此处暂用 hourly 第一档近似
+                $('uv').innerText = "加载中"; 
 
-                // 温度填充
-                $('t-m').innerText = hourly[3].FeelsLikeC + "°";
-                $('t-n').innerText = hourly[4].FeelsLikeC + "°";
-                $('t-e').innerText = hourly[7].FeelsLikeC + "°";
-                $('t-avg').innerText = (hourly.reduce((s,x)=>s+parseInt(x.FeelsLikeC),0)/8).toFixed(1) + "°";
-                $('t-d').innerText = (hourly.slice(3,7).reduce((s,x)=>s+parseInt(x.FeelsLikeC),0)/4).toFixed(1) + "°";
-                $('t-nt').innerText = (hourly.slice(0,3).concat(hourly[7]).reduce((s,x)=>s+parseInt(x.FeelsLikeC),0)/4).toFixed(1) + "°";
+                // 早中晚逻辑 (从 24 小时预报中提取)
+                // 假设 08:00 是早，14:00 是中，20:00 是晚
+                $('t-m').innerText = hours[8].feelsLike + "°";
+                $('t-n').innerText = hours[14].feelsLike + "°";
+                $('t-e').innerText = hours[20].feelsLike + "°";
 
-                // 风力填充 (km/h 转 m/s)
-                const fmtW = (h) => (h.windspeedKmph * 0.278).toFixed(1) + " " + simplifyWindDir(h.winddir16Point);
-                $('w-now').innerText = fmtW(cur);
-                $('w-all').innerText = fmtW(hourly[4]);
-                $('w-day').innerText = fmtW(hourly[4]);
-                $('w-night').innerText = fmtW(hourly[7]);
+                // 平均值计算
+                const allTemps = hours.map(h => parseInt(h.feelsLike));
+                const dayTemps = hours.slice(6, 18).map(h => parseInt(h.feelsLike));
+                const nightTemps = hours.slice(0, 6).concat(hours.slice(18, 24)).map(h => parseInt(h.feelsLike));
 
-                $('hum').innerText = cur.humidity + "%";
-                $('uv').innerText = cur.uvIndex;
+                const avg = (arr) => (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1);
+                $('t-avg').innerText = avg(allTemps) + "°";
+                $('t-d').innerText = avg(dayTemps) + "°";
+                $('t-nt').innerText = avg(nightTemps) + "°";
+
+                // 风力平均值 (km/h 转 m/s)
+                const avgW = (arr) => (arr.reduce((a, b) => a + parseInt(b.windSpeed), 0) / arr.length / 3.6).toFixed(1);
+                $('w-all').innerText = avgW(hours) + " m/s";
+                $('w-day').innerText = avgW(hours.slice(6, 18)) + " m/s";
+                $('w-night').innerText = avgW(hours.slice(18, 24)) + " m/s";
 
                 $('syncBtn').innerText = "✅ 同步成功";
-                setTimeout(() => { $('syncBtn').innerText = "点击同步气象数据"; }, 2000);
-            })
-            .catch(() => {
-                $('syncBtn').innerText = "⚠️ 请求失败，请检查网络或重试";
-                setTimeout(() => { $('syncBtn').innerText = "点击同步气象数据"; }, 3000);
-            });
+            } else {
+                throw new Error("API 返回错误");
+            }
+        } catch (e) {
+            $('syncBtn').innerText = "❌ 访问受限或 Key 错误";
+            console.error(e);
+        }
+        
+        setTimeout(() => { $('syncBtn').innerText = "同步和风天气数据"; }, 2000);
     };
 </script>
 </body>

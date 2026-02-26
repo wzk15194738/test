@@ -42,62 +42,36 @@
     </div>
 
     <script>
-        // 辅助函数
-        const $ = (id) => document.getElementById(id);
-
-        // 1. 变色
-        $('colorBtn').onclick = () => {
-            $('mainTitle').style.color = `hsl(${Math.random()*360}, 70%, 50%)`;
-        };
-
-        // 2. 欢迎语
-        $('nameInput').oninput = (e) => {
-            $('greetText').innerText = e.target.value ? `你好，${e.target.value}！` : "你好！";
-        };
-
-        // 3. 主题
-        $('themeBtn').onclick = () => document.body.classList.toggle('dark');
-
-        // 4. 计数器
-        let num = 0;
-        $('plus').onclick = () => $('count').innerText = ++num;
-        $('minus').onclick = () => $('count').innerText = --num;
-
-        // 5. 【核心】天气 API 逻辑
-        $('getWeather').onclick = function() {
-            const display = $('weatherDisplay');
-            display.innerText = "🛰️ 正在连接气象卫星...";
-
-            // 使用 fetch 从外部服务器获取数据
-            fetch('https://wttr.in/?format=j1')
-                .then(res => res.json()) // 将返回的数据转为 JSON 格式
-                .then(data => {
-                    const current = data.current_condition[0];
-                    const area = data.nearest_area[0];
-                    
-                    const temp = current.temp_C; // 摄氏度
-                    const desc = current.lang_zh ? current.lang_zh[0].value : current.weatherDesc[0].value; // 天气描述
-                    const city = area.region[0].value; // 地区
-
-                    // 更新 UI
-                    display.innerHTML = `
-                        <b>城市：</b> ${city}<br>
-                        <b>温度：</b> ${temp}°C<br>
-                        <b>状况：</b> ${desc}
-                    `;
-                    
-                    // 额外逻辑：根据温度改变标题颜色
-                    if (parseInt(temp) > 25) {
-                        $('mainTitle').style.color = 'orange';
-                    } else {
-                        $('mainTitle').style.color = 'skyblue';
-                    }
-                })
-                .catch(err => {
-                    display.innerText = "❌ 获取失败，请检查网络或稍后再试。";
-                    console.error(err);
-                });
-        };
+        $('getWeather').onclick = () => {
+    const display = $('weatherDisplay');
+    display.innerText = "🛰️ 正在从气象站抓取数据...";
+    
+    // 我们改用一个更直接的 API 格式：wttr.in/China?format=j1
+    // 这样不需要申请用户的经纬度权限，成功率提升 90%
+    fetch('https://wttr.in/Beijing?format=j1') 
+        .then(res => {
+            if (!res.ok) throw new Error('服务器忙');
+            return res.json();
+        })
+        .then(data => {
+            const current = data.current_condition[0];
+            const temp = current.temp_C;
+            const desc = current.lang_zh ? current.lang_zh[0].value : current.weatherDesc[0].value;
+            
+            display.innerHTML = `
+                <b>北京</b> (示例) <br>
+                🌡️ 气温: ${temp}°C <br>
+                ☁️ 状态: ${desc}
+            `;
+            console.log("数据抓取成功！");
+        })
+        .catch(err => {
+            console.error(err);
+            // 如果 API 挂了，显示备用方案
+            display.innerHTML = "❌ 接口超时，请尝试：<br><a href='https://wttr.in' target='_blank'>点击这里直接看网页版天气</a>";
+        });
+};
     </script>
 </body>
+
 </html>

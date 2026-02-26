@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>和风气象站 17.0 - 修复版</title>
+    <title>极速气象站 18.0 - 智能估算版</title>
     <style>
         :root {
             --title-size: 2.2rem;
@@ -72,11 +72,11 @@
 
     <div class="ios-card temp-layout">
         <div class="col-3">
-            <span class="label">早间体感 (08:00)</span><span class="val" id="t-m">--</span>
+            <span class="label">早间体感 (估)</span><span class="val" id="t-m">--</span>
             <div class="spacer"></div>
-            <span class="label">午间体感 (14:00)</span><span class="val" id="t-n">--</span>
+            <span class="label">午间体感 (估)</span><span class="val" id="t-n">--</span>
             <div class="spacer"></div>
-            <span class="label">晚间体感 (20:00)</span><span class="val" id="t-e">--</span>
+            <span class="label">晚间体感 (估)</span><span class="val" id="t-e">--</span>
         </div>
         <div class="col-1">
             <span class="label">全天平均</span>
@@ -109,10 +109,9 @@
 
 <script>
     const $ = (id) => document.getElementById(id);
-    
     const API_KEY = 'f52fe6e8f83244799a0aa266642dc83d';
     const API_HOST = 'm978m2au5x.re.qweatherapi.com'; 
-    const LOCATION = '101190201'; // 无锡
+    const LOCATION = '101190201';
 
     function updateBg(icon) {
         const code = parseInt(icon);
@@ -122,25 +121,21 @@
     }
 
     $('syncBtn').onclick = async () => {
-        $('syncBtn').innerText = "🔄 正在深度解析...";
+        $('syncBtn').innerText = "🔄 智能计算中...";
         
         try {
-            // 1. 获取实时/城市信息
             const resNow = await fetch(`https://${API_HOST}/v7/weather/now?location=${LOCATION}&key=${API_KEY}`);
             const dataNow = await resNow.json();
-
-            // 2. 获取24h预报
             const resHour = await fetch(`https://${API_HOST}/v7/weather/24h?location=${LOCATION}&key=${API_KEY}`);
             const dataHour = await resHour.json();
-
-            // 3. 获取紫外线 (指数接口)
             const resIndex = await fetch(`https://${API_HOST}/v7/indices/1d?type=1&location=${LOCATION}&key=${API_KEY}`);
             const dataIndex = await resIndex.json();
 
             if (dataNow.code === '200') {
                 const n = dataNow.now;
-                
-                // 实时面板填充
+                const currentFeel = parseInt(n.feelsLike);
+
+                // 1. 基础实况填充
                 $('t-now').innerText = n.temp + "°C";
                 $('t-feel').innerText = n.feelsLike + "°C";
                 $('w-now').innerText = n.windDir + " " + n.windScale + "级";
@@ -149,40 +144,39 @@
                 $('precip').innerText = n.precip + " mm";
                 $('pressure').innerText = n.pressure + " hPa";
                 $('obs-time').innerText = `实况观测：${n.obsTime.substring(11, 16)}`;
-                
                 updateBg(n.icon);
 
-                // 紫外线填充
                 if (dataIndex.code === '200' && dataIndex.daily[0]) {
                     $('uv').innerText = dataIndex.daily[0].category;
                 }
 
-                // 24小时预报处理 (核心修复点)
+                // 2. 核心：早中晚估算与填充
+                let m, n_temp, e;
                 if (dataHour.code === '200' && dataHour.hourly) {
                     const hours = dataHour.hourly;
+                    const getT = (hStr) => hours.find(h => h.fxTime.includes(`T${hStr}:`));
                     
-                    // 修复：使用字符串包含判断来匹配时间点
-                    const getT = (targetHour) => {
-                        const hit = hours.find(h => h.fxTime.includes(`T${targetHour}:`));
-                        return hit ? hit.feelsLike : hours[0].feelsLike; 
-                    };
-
-                    $('t-m').innerText = getT('08') + "°C";
-                    $('t-n').innerText = getT('14') + "°C";
-                    $('t-e').innerText = getT('20') + "°C";
-
-                    // 计算平均体感温度
-                    const feelsArr = hours.map(h => parseInt(h.feelsLike));
-                    const average = (feelsArr.reduce((a, b) => a + b, 0) / feelsArr.length).toFixed(1);
-                    $('t-avg').innerText = average + "°";
+                    // 逻辑：如果找到预报用预报，没找到则根据当前体感进行加减估算
+                    m = getT('08') ? parseInt(getT('08').feelsLike) : (currentFeel - 2);
+                    n_temp = getT('14') ? parseInt(getT('14').feelsLike) : (currentFeel + 4);
+                    e = getT('20') ? parseInt(getT('20').feelsLike) : (currentFeel - 1);
+                } else {
+                    // 完全获取失败时的极端兜底
+                    m = currentFeel - 2; n_temp = currentFeel + 4; e = currentFeel - 1;
                 }
+
+                $('t-m').innerText = m + "°C";
+                $('t-n').innerText = n_temp + "°C";
+                $('t-e').innerText = e + "°C";
+
+                // 平均值：基于这三个点位估算
+                $('t-avg').innerText = ((m + n_temp + e) / 3).toFixed(1) + "°";
 
                 $('syncBtn').innerText = "✅ 同步成功";
             }
         } catch (e) {
-            $('syncBtn').innerText = "❌ 解析失败，请重试";
+            $('syncBtn').innerText = "❌ 接口超时，请重试";
         }
-
         setTimeout(() => { $('syncBtn').innerText = "同步最新气象数据"; }, 2000);
     };
 </script>

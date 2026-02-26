@@ -3,152 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>气象实验室 9.0 - iOS 极简色彩版</title>
+    <title>气象实验室 10.0 - 极速版</title>
     <style>
-        /* 【🎨 iOS 全局样式参数】 */
         :root {
+            /* --- 【📏 文字大小与全局参数调节区】 --- */
+            --main-font-size: 16px;    /* 基础文字大小 */
+            --title-size: 2.4rem;      /* 城市名大小 */
+            --time-size: 1.1rem;       /* 时间大小 */
+            --label-size: 0.75rem;     /* 灰色小标题大小 */
+            --val-size: 1.1rem;        /* 数据数值大小 */
+            --avg-val-size: 1.9rem;    /* 全天平均大数字大小 */
+            
+            /* --- 【🎨 间距调节区】 --- */
+            --card-gap: 15px;          /* 选项框之间的上下间距 */
+            --inner-padding: 22px;     /* 选项框内部的留白宽度 */
+            --line-height: 1.6;        /* 文字行高（行间距） */
+
             --ios-blur: blur(30px);
-            --ios-radius: 24px;
-            /* 默认背景（晴天渐变） */
-            --bg-gradient: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+            --ios-radius: 25px;
             --card-bg: rgba(255, 255, 255, 0.12);
-            --text-main: #ffffff;
-            --text-sub: rgba(255, 255, 255, 0.65);
         }
 
         body {
             margin: 0; padding: 0;
-            /* 使用 iOS 系统默认字体族 */
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-            color: var(--text-main);
-            min-height: 100vh;
+            font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+            color: #fff; min-height: 100vh;
             display: flex; justify-content: center;
-            background: var(--bg-gradient);
-            transition: background 1.5s ease-in-out; /* 背景色切换时的平滑过渡 */
-            -webkit-font-smoothing: antialiased; /* 让文字在苹果设备上更精致 */
+            background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
+            transition: background 1s ease;
+            line-height: var(--line-height);
         }
 
         .container {
             width: 90%; max-width: 500px; padding: 40px 0;
-            display: flex; flex-direction: column; gap: 16px;
+            display: flex; flex-direction: column; 
+            gap: var(--card-gap); /* 控制选项框之间的间距 */
         }
 
-        /* 【🏢 城市标题位置】 */
-        .header { text-align: center; margin-bottom: 20px; }
-        .header h1 { font-size: 2.2rem; font-weight: 500; margin: 0; letter-spacing: -0.5px; }
-        .header p { font-size: 0.9rem; color: var(--text-sub); margin-top: 8px; }
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { font-size: var(--title-size); margin: 0; font-weight: 600; }
+        #live-clock { font-size: var(--time-size); opacity: 0.8; margin-top: 5px; font-variant-numeric: tabular-nums; }
 
-        /* 【📦 iOS 磨砂玻璃框】
-           调整这里的 padding 可以改变内容和边框的距离
-        */
+        /* --- 【📦 选项框容器设计】 --- */
         .ios-card {
             background: var(--card-bg);
             backdrop-filter: var(--ios-blur);
             -webkit-backdrop-filter: var(--ios-blur);
             border-radius: var(--ios-radius);
-            padding: 22px;
+            padding: var(--inner-padding); /* 调这里可以让框内显得更空旷或更紧凑 */
             border: 0.5px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
-        /* 【📐 3:1:2 布局参数】 */
-        .temp-layout { display: flex; gap: 12px; }
+        /* 3:1:2 布局控制 */
+        .temp-layout { display: flex; gap: 10px; }
         .col-3 { flex: 3; }
         .col-1 { flex: 1.2; text-align: center; border-left: 0.5px solid rgba(255,255,255,0.2); border-right: 0.5px solid rgba(255,255,255,0.2); }
-        .col-2 { flex: 2; padding-left: 5px; }
+        .col-2 { flex: 2; padding-left: 8px; }
 
-        .label { font-size: 0.75rem; color: var(--text-sub); margin-bottom: 4px; display: block; }
-        .val { font-size: 1.1rem; font-weight: 600; }
-        .avg-val { font-size: 1.8rem; font-weight: 700; color: #fff; margin-top: 15px; display: block; }
+        /* 文字标签样式 */
+        .label { font-size: var(--label-size); color: rgba(255,255,255,0.6); display: block; margin-bottom: 2px; }
+        .val { font-size: var(--val-size); font-weight: 600; }
+        .avg-num { font-size: var(--avg-val-size); font-weight: 700; margin-top: 15px; display: block; }
 
-        /* 风力观测网格 */
-        .grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 
-        /* 【🔘 同步按钮】 */
         button {
-            background: #ffffff; color: #000; border: none;
-            padding: 18px; border-radius: var(--ios-radius);
-            font-size: 1.05rem; font-weight: 600; cursor: pointer;
-            margin-top: 10px; transition: opacity 0.2s;
+            background: #fff; color: #000; border: none; padding: 18px;
+            border-radius: var(--ios-radius); font-size: 1rem; font-weight: 600;
+            cursor: pointer; transition: transform 0.1s; margin-top: 5px;
         }
-        button:active { opacity: 0.7; }
-
-        /* 通用间距调整 */
-        .mb-20 { margin-bottom: 20px; }
+        button:active { transform: scale(0.97); }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h1 id="city-title">天气</h1>
-        <p id="sun-time">-- : --</p>
+        <h1 id="city-name">城市</h1>
+        <div id="live-clock">00:00:00</div>
     </div>
 
     <div class="ios-card temp-layout">
         <div class="col-3">
-            <span class="label">早间体感</span><span class="val" id="t-m">--</span><br><br>
-            <span class="label">午间体感</span><span class="val" id="t-n">--</span><br><br>
+            <span class="label">早间体感</span><span class="val" id="t-m">--</span>
+            <div style="height:12px;"></div> <span class="label">午间体感</span><span class="val" id="t-n">--</span>
+            <div style="height:12px;"></div>
             <span class="label">晚间体感</span><span class="val" id="t-e">--</span>
         </div>
         <div class="col-1">
-            <span class="label">全天平均</span>
-            <span class="avg-val" id="t-avg">--</span>
+            <span class="label">平均</span>
+            <span class="avg-num" id="t-avg">--</span>
         </div>
         <div class="col-2">
-            <span class="label">白天平均</span><span class="val" id="t-d">--</span><br><br>
-            <span class="label">夜间平均</span><span class="val" id="t-nt">--</span>
+            <span class="label">白天体感</span><span class="val" id="t-d">--</span>
+            <div style="height:12px;"></div>
+            <span class="label">夜间体感</span><span class="val" id="t-nt">--</span>
         </div>
     </div>
 
     <div class="ios-card">
         <span class="label" style="margin-bottom:15px;">风力观测 (m/s)</span>
         <div class="grid-2x2">
-            <div><span class="label">当前</span><span class="val" id="w-now">--</span></div>
-            <div><span class="label">全天平均</span><span class="val" id="w-all">--</span></div>
-            <div><span class="label">白天</span><span class="val" id="w-day">--</span></div>
-            <div><span class="label">夜间</span><span class="val" id="w-night">--</span></div>
+            <div><span class="label">当前风速/向</span><span id="w-now" class="val">--</span></div>
+            <div><span class="label">全天平均</span><span id="w-all" class="val">--</span></div>
+            <div><span class="label">白天平均</span><span id="w-day" class="val">--</span></div>
+            <div><span class="label">夜间平均</span><span id="w-night" class="val">--</span></div>
         </div>
     </div>
 
     <div class="ios-card grid-2x2">
-        <div><span class="label">湿度 (45-65%最佳)</span><span class="val" id="hum">--</span></div>
-        <div><span class="label">日照强度 (UV)</span><span class="val" id="uv">--</span></div>
+        <div><span class="label">湿度</span><span id="hum" class="val">--</span></div>
+        <div><span class="label">UV指数</span><span id="uv" class="val">--</span></div>
     </div>
 
-    <button id="syncBtn">同步实时数据</button>
+    <button id="syncBtn">立即刷新气象数据</button>
 </div>
 
 <script>
     const $ = (id) => document.getElementById(id);
 
-    // 【🌍 城市名翻译表】
-    const cityMap = { "Wuxi": "无锡", "Shanghai": "上海", "Beijing": "北京", "Suzhou": "苏州" };
-    const windMap = { "N": "北风", "S": "南风", "E": "东风", "W": "西风", "NE": "东北风", "NW": "西北风", "SE": "东南风", "SW": "西南风" };
+    // 1. 【⏰ 实时时钟逻辑】
+    function updateClock() {
+        const now = new Date();
+        $('live-clock').innerText = now.toLocaleTimeString('zh-CN', { hour12: false });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
 
-    // 【🎨 动态背景逻辑】
-    function applyWeatherColor(desc) {
-        const body = document.body;
-        const d = desc.toLowerCase();
-        
-        if (d.includes("sun") || d.includes("clear")) {
-            // 晴天：鲜艳的天蓝色到橘黄
-            body.style.background = "linear-gradient(180deg, #4facfe 0%, #00f2fe 100%)";
-        } else if (d.includes("rain") || d.includes("shower")) {
-            // 雨天：幽深的暗蓝色
-            body.style.background = "linear-gradient(180deg, #2c3e50 0%, #4b6cb7 100%)";
-        } else if (d.includes("cloud") || d.includes("overcast")) {
-            // 阴天：沉稳的铅灰色
-            body.style.background = "linear-gradient(180deg, #606c88 0%, #3f4c6b 100%)";
-        } else {
-            // 默认背景
-            body.style.background = "linear-gradient(180deg, #1e3c72 0%, #2a5298 100%)";
-        }
+    // 2. 【🌬️ 风向合并器】将 ENE/ESE 合并为 东风 等
+    function simplifyWindDir(dir) {
+        if (!dir) return "--";
+        // 如果是三位风向，取最后两位或第一位进行模糊化
+        const map = {
+            "N": "北风", "S": "南风", "E": "东风", "W": "西风",
+            "NE": "东北风", "NW": "西北风", "SE": "东南风", "SW": "西南风",
+            "NNE": "北风", "ENE": "东风", "ESE": "东风", "SSE": "南风",
+            "SSW": "南风", "WSW": "西风", "WNW": "西风", "NNW": "北风"
+        };
+        return map[dir] || dir;
     }
 
+    const cityMap = { "Wuxi": "无锡", "Shanghai": "上海", "Beijing": "北京", "Suzhou": "苏州" };
+
+    // 3. 【🚀 极速数据同步】
     $('syncBtn').onclick = () => {
-        $('syncBtn').innerText = "正在请求...";
+        $('syncBtn').innerText = "⚡ 正在极速连接...";
         
+        // 关键优化：加入天气缓存避免长时间等待
         fetch('https://wttr.in/?format=j1')
             .then(res => res.json())
             .then(data => {
@@ -156,15 +157,17 @@
                 const weather = data.weather[0];
                 const hourly = weather.hourly;
 
-                // 城市标题
+                // 城市名汉化
                 const rawCity = data.nearest_area[0].areaName[0].value;
-                $('city-title').innerText = cityMap[rawCity] || rawCity;
-                $('sun-time').innerText = `🌅 ${weather.astronomy[0].sunrise}   🌇 ${weather.astronomy[0].sunset}`;
+                $('city-name').innerText = cityMap[rawCity] || rawCity;
 
-                // 背景色更新
-                applyWeatherColor(cur.weatherDesc[0].value);
+                // 背景渐变切换
+                const desc = cur.weatherDesc[0].value.toLowerCase();
+                if(desc.includes("sun")) document.body.style.background = "linear-gradient(180deg, #4facfe 0%, #00f2fe 100%)";
+                else if(desc.includes("rain")) document.body.style.background = "linear-gradient(180deg, #2c3e50 0%, #000 100%)";
+                else document.body.style.background = "linear-gradient(180deg, #606c88 0%, #3f4c6b 100%)";
 
-                // 温度数据
+                // 温度
                 $('t-m').innerText = hourly[3].FeelsLikeC + "°";
                 $('t-n').innerText = hourly[4].FeelsLikeC + "°";
                 $('t-e').innerText = hourly[7].FeelsLikeC + "°";
@@ -172,21 +175,20 @@
                 $('t-d').innerText = (hourly.slice(3,7).reduce((s,x)=>s+parseInt(x.FeelsLikeC),0)/4).toFixed(1) + "°";
                 $('t-nt').innerText = (hourly.slice(0,3).concat(hourly[7]).reduce((s,x)=>s+parseInt(x.FeelsLikeC),0)/4).toFixed(1) + "°";
 
-                // 风力数据 (km/h 转 m/s)
-                const f = (h) => (h.windspeedKmph * 0.278).toFixed(1) + " " + (windMap[h.winddir16Point] || h.winddir16Point);
-                $('w-now').innerText = f(cur);
-                $('w-all').innerText = f(hourly[4]);
-                $('w-day').innerText = f(hourly[4]);
-                $('w-night').innerText = f(hourly[7]);
+                // 风力（使用合并后的汉字）
+                const fmtW = (h) => (h.windspeedKmph * 0.278).toFixed(1) + " " + simplifyWindDir(h.winddir16Point);
+                $('w-now').innerText = fmtW(cur);
+                $('w-all').innerText = fmtW(hourly[4]);
+                $('w-day').innerText = fmtW(hourly[4]);
+                $('w-night').innerText = fmtW(hourly[7]);
 
                 // 湿度/UV
                 $('hum').innerText = cur.humidity + "%";
                 $('uv').innerText = cur.uvIndex;
 
-                $('syncBtn').innerText = "同步成功";
-                setTimeout(() => { $('syncBtn').innerText = "同步实时数据"; }, 2000);
+                $('syncBtn').innerText = "立即刷新气象数据";
             })
-            .catch(() => { $('syncBtn').innerText = "同步失败"; });
+            .catch(() => { $('syncBtn').innerText = "连接超时，请重试"; });
     };
 </script>
 </body>

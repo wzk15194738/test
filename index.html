@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>气象站 21.0 - 自动定位版</title>
+    <title>气象站 22.0 - 和风全链路版</title>
     <style>
         :root {
             --title-size: 2.2rem;
@@ -68,8 +68,8 @@
 
 <div class="container">
     <div class="header">
-        <h1 id="city-name">正在定位...</h1>
-        <span class="loc-tag" id="loc-coord">获取位置中</span>
+        <h1 id="city-name">定位中...</h1>
+        <span class="loc-tag" id="loc-detail">正在核对地理位置</span>
     </div>
 
     <div class="ios-card temp-layout">
@@ -112,40 +112,36 @@
 <script>
     const $ = (id) => document.getElementById(id);
     const API_KEY = 'f52fe6e8f83244799a0aa266642dc83d';
+    // 注意：城市搜索接口通常在 geoapi.qweather.com，如果你的 Host 统一了也可以尝试替换
     const API_HOST = 'm978m2au5x.re.qweatherapi.com'; 
 
-    // 获取位置的函数：优先使用 IP 定位，备选浏览器定位
-    async function getLocation() {
-        try {
-            // 使用 IP-API 免费服务获取经纬度 (无需 API Key，适合演示)
-            const resp = await fetch('https://ipapi.co/json/');
-            const data = await resp.json();
-            if (data.longitude && data.latitude) {
-                return {
-                    coords: `${data.longitude.toFixed(2)},${data.latitude.toFixed(2)}`,
-                    city: data.city
-                };
-            }
-            throw new Error('IP定位失败');
-        } catch (e) {
-            // 兜底：如果外部服务失败，返回默认无锡
-            return { coords: '120.30,31.57', city: '无锡(默认)' };
-        }
-    }
-
-    $('syncBtn').onclick = async () => {
-        $('syncBtn').innerText = "📍 正在定位并同步...";
+    async function fetchLocalWeather() {
+        $('syncBtn').innerText = "📍 正在通过 IP 定位...";
         
         try {
-            // 1. 获取定位
-            const myLoc = await getLocation();
-            $('city-name').innerText = myLoc.city;
-            $('loc-coord').innerText = `经纬度: ${myLoc.coords}`;
+            // STEP 1: 获取原生经纬度 (IP 定位)
+            const ipResp = await fetch('https://ipapi.co/json/');
+            const ipData = await ipResp.json();
+            const lonLat = `${ipData.longitude.toFixed(2)},${ipData.latitude.toFixed(2)}`;
 
-            // 2. 请求和风实况
+            // STEP 2: 使用和风 GeoAPI 转换经纬度为中文城市信息
+            // 接口：/geo/v2/city/lookup
+            const geoResp = await fetch(`https://${API_HOST}/geo/v2/city/lookup?location=${lonLat}&key=${API_KEY}&lang=zh`);
+            const geoData = await geoResp.json();
+
+            if (geoData.code !== '200' || !geoData.location) {
+                throw new Error("和风城市查询失败");
+            }
+
+            const cityInfo = geoData.location[0];
+            $('city-name').innerText = cityInfo.name; // 得到中文名，如 "朝阳" 或 "无锡"
+            $('loc-detail').innerText = `${cityInfo.adm1} · ${cityInfo.adm2} (${cityInfo.lat},${cityInfo.lon})`;
+
+            // STEP 3: 使用得到的 Location ID 查询天气
+            const targetId = cityInfo.id;
             const [resNow, resIndex] = await Promise.all([
-                fetch(`https://${API_HOST}/v7/weather/now?location=${myLoc.coords}&key=${API_KEY}`),
-                fetch(`https://${API_HOST}/v7/indices/1d?type=1&location=${myLoc.coords}&key=${API_KEY}`)
+                fetch(`https://${API_HOST}/v7/weather/now?location=${targetId}&key=${API_KEY}`),
+                fetch(`https://${API_HOST}/v7/indices/1d?type=1&location=${targetId}&key=${API_KEY}`)
             ]);
 
             const dNow = await resNow.json();
@@ -155,7 +151,7 @@
                 const n = dNow.now;
                 const baseF = parseInt(n.feelsLike);
 
-                // 填充实况数据
+                // 填充页面
                 $('t-now').innerText = n.temp + "°C";
                 $('t-feel').innerText = n.feelsLike + "°C";
                 $('w-now').innerText = n.windDir + " " + n.windScale + "级";
@@ -169,25 +165,26 @@
                     $('uv').innerText = dIndex.daily[0].category;
                 }
 
-                // 3. 执行智能估算算法
-                const m = baseF - 3;
-                const n_t = baseF + 5;
-                const e = baseF - 1;
+                // 智能算法填坑
+                const m = baseF - 3, n_t = baseF + 5, e = baseF - 1;
                 $('t-m').innerText = m + "°C";
                 $('t-n').innerText = n_t + "°C";
                 $('t-e').innerText = e + "°C";
                 $('t-avg').innerText = ((m + n_t + e + baseF) / 4).toFixed(1) + "°";
 
-                $('syncBtn').innerText = "✅ 已更新当地天气";
+                $('syncBtn').innerText = "✅ 数据更新成功";
             }
         } catch (err) {
-            $('syncBtn').innerText = "❌ 定位或请求失败";
+            console.error(err);
+            $('syncBtn').innerText = "❌ 定位失败，请检查网络";
+            $('city-name').innerText = "未知城市";
         }
-        setTimeout(() => { $('syncBtn').innerText = "获取当前位置气象数据"; }, 2000);
-    };
+        
+        setTimeout(() => { $('syncBtn').innerText = "同步当前位置气象"; }, 2000);
+    }
 
-    // 页面加载自动运行一次
-    window.onload = () => $('syncBtn').click();
+    $('syncBtn').onclick = fetchLocalWeather;
+    window.onload = fetchLocalWeather;
 </script>
 </body>
 </html>

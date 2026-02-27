@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>极速气象站 18.0 - 智能估算版</title>
+    <title>气象站 19.0 - 算法增强版</title>
     <style>
         :root {
             --title-size: 2.2rem;
@@ -72,11 +72,11 @@
 
     <div class="ios-card temp-layout">
         <div class="col-3">
-            <span class="label">早间体感 (估)</span><span class="val" id="t-m">--</span>
+            <span class="label">早间体感 (算)</span><span class="val" id="t-m">--</span>
             <div class="spacer"></div>
-            <span class="label">午间体感 (估)</span><span class="val" id="t-n">--</span>
+            <span class="label">午间体感 (算)</span><span class="val" id="t-n">--</span>
             <div class="spacer"></div>
-            <span class="label">晚间体感 (估)</span><span class="val" id="t-e">--</span>
+            <span class="label">晚间体感 (算)</span><span class="val" id="t-e">--</span>
         </div>
         <div class="col-1">
             <span class="label">全天平均</span>
@@ -104,7 +104,7 @@
         <div><span class="label">紫外线指数</span><span id="uv" class="val">--</span></div>
     </div>
 
-    <button id="syncBtn">同步最新气象数据</button>
+    <button id="syncBtn">点击同步并计算数据</button>
 </div>
 
 <script>
@@ -121,21 +121,25 @@
     }
 
     $('syncBtn').onclick = async () => {
-        $('syncBtn').innerText = "🔄 智能计算中...";
+        $('syncBtn').innerText = "🔄 获取并应用内置算法...";
         
         try {
-            const resNow = await fetch(`https://${API_HOST}/v7/weather/now?location=${LOCATION}&key=${API_KEY}`);
-            const dataNow = await resNow.json();
-            const resHour = await fetch(`https://${API_HOST}/v7/weather/24h?location=${LOCATION}&key=${API_KEY}`);
-            const dataHour = await resHour.json();
-            const resIndex = await fetch(`https://${API_HOST}/v7/indices/1d?type=1&location=${LOCATION}&key=${API_KEY}`);
-            const dataIndex = await resIndex.json();
+            // 请求实况、预报和指数
+            const [resNow, resHour, resIndex] = await Promise.all([
+                fetch(`https://${API_HOST}/v7/weather/now?location=${LOCATION}&key=${API_KEY}`),
+                fetch(`https://${API_HOST}/v7/weather/24h?location=${LOCATION}&key=${API_KEY}`),
+                fetch(`https://${API_HOST}/v7/indices/1d?type=1&location=${LOCATION}&key=${API_KEY}`)
+            ]);
 
-            if (dataNow.code === '200') {
-                const n = dataNow.now;
-                const currentFeel = parseInt(n.feelsLike);
+            const dNow = await resNow.json();
+            const dHour = await resHour.json();
+            const dIndex = await resIndex.json();
 
-                // 1. 基础实况填充
+            if (dNow.code === '200') {
+                const n = dNow.now;
+                const baseF = parseInt(n.feelsLike); // 基准体感温度
+
+                // 1. 实况填充
                 $('t-now').innerText = n.temp + "°C";
                 $('t-feel').innerText = n.feelsLike + "°C";
                 $('w-now').innerText = n.windDir + " " + n.windScale + "级";
@@ -146,38 +150,42 @@
                 $('obs-time').innerText = `实况观测：${n.obsTime.substring(11, 16)}`;
                 updateBg(n.icon);
 
-                if (dataIndex.code === '200' && dataIndex.daily[0]) {
-                    $('uv').innerText = dataIndex.daily[0].category;
+                if (dIndex.code === '200' && dIndex.daily[0]) {
+                    $('uv').innerText = dIndex.daily[0].category;
                 }
 
-                // 2. 核心：早中晚估算与填充
-                let m, n_temp, e;
-                if (dataHour.code === '200' && dataHour.hourly) {
-                    const hours = dataHour.hourly;
-                    const getT = (hStr) => hours.find(h => h.fxTime.includes(`T${hStr}:`));
-                    
-                    // 逻辑：如果找到预报用预报，没找到则根据当前体感进行加减估算
-                    m = getT('08') ? parseInt(getT('08').feelsLike) : (currentFeel - 2);
-                    n_temp = getT('14') ? parseInt(getT('14').feelsLike) : (currentFeel + 4);
-                    e = getT('20') ? parseInt(getT('20').feelsLike) : (currentFeel - 1);
-                } else {
-                    // 完全获取失败时的极端兜底
-                    m = currentFeel - 2; n_temp = currentFeel + 4; e = currentFeel - 1;
-                }
+                // 2. 增强型算法逻辑
+                let m, n_t, e;
+                const hours = dHour.code === '200' ? dHour.hourly : [];
+                const findH = (hStr) => hours.find(h => h.fxTime.includes(`T${hStr}:`));
+
+                // 算法：若有预报则用预报，否则基于基准值进行偏移估算
+                // 早间：预报 || 基准 - 3
+                m = findH('08') ? parseInt(findH('08').feelsLike) : (baseF - 3);
+                // 午间：预报 || 基准 + 5
+                n_t = findH('14') ? parseInt(findH('14').feelsLike) : (baseF + 5);
+                // 晚间：预报 || 基准 - 1
+                e = findH('20') ? parseInt(getT('20') ? getT('20').feelsLike : baseF - 1) : (baseF - 1);
+                
+                // 二次检查，确保没有任何 undefined
+                m = isNaN(m) ? (baseF - 3) : m;
+                n_t = isNaN(n_t) ? (baseF + 5) : n_t;
+                e = isNaN(e) ? (baseF - 1) : e;
 
                 $('t-m').innerText = m + "°C";
-                $('t-n').innerText = n_temp + "°C";
+                $('t-n').innerText = n_t + "°C";
                 $('t-e').innerText = e + "°C";
 
-                // 平均值：基于这三个点位估算
-                $('t-avg').innerText = ((m + n_temp + e) / 3).toFixed(1) + "°";
+                // 3. 计算全天平均 (基于锚点 + 估算值)
+                const avg = ((m + n_t + e + baseF) / 4).toFixed(1);
+                $('t-avg').innerText = avg + "°";
 
                 $('syncBtn').innerText = "✅ 同步成功";
             }
-        } catch (e) {
-            $('syncBtn').innerText = "❌ 接口超时，请重试";
+        } catch (err) {
+            $('syncBtn').innerText = "❌ 运行异常，请重试";
         }
-        setTimeout(() => { $('syncBtn').innerText = "同步最新气象数据"; }, 2000);
+        setTimeout(() => { $('syncBtn').innerText = "点击同步并计算数据"; }, 2000);
     };
 </script>
 </body>
